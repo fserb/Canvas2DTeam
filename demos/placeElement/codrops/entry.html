@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+	<head>
+		<style>
+canvas {
+	width: 600px;
+	height: 600px;
+	margin: 10px;
+}
+
+#other {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 600px;
+  height: 600px;  
+  background-color: green;
+  image-rendering: pixelated;  
+}
+
+#f {
+  contain: paint;
+  width: 412px;
+  height: 412px;
+  font-size: 32px;
+/*  background-color: #99F;*/
+  background: linear-gradient(45deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF);
+
+  font-family: arial;
+  overflow: auto;
+  padding: 40px;
+  box-sizing: border-box;
+
+}
+
+button, input {
+	font-size: 32px;
+}
+
+
+	</style>
+	</head>
+	<body class="demo-1">
+    <canvas id="other" width="600" height="600">
+      <div id=f>hello<br>
+this is a canvas text!<br>
+multiline and scrolling<br>
+in webgl<br>
+really!<br>
+<Br><br>
+and this is a <b>very big line</b> that really flexes what we can do. And also. 
+Wait for it: <a href="https://google.com">you can click</a>.<br>
+<br><br>
+More forms:<br><br>
+<button id=button>click</button><br><br>
+<input type="text" value="input text"></input><br><Br>
+
+      </div>
+    </canvas>		
+		{{entry}}    
+	</body>
+</html>

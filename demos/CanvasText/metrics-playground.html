@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        background-color: darkgray;
+        font-variant-ligatures: none;
+      }
+      #c {
+        border: 1px solid black;
+      }
+      #input_text {
+        width: 300px;
+      }
+      #sel_from, #sel_to {
+        width: 40px;
+      }
+      #div {
+        width: 1500px;
+        background-color: snow;
+      }
+    </style>
+  </head>
+  <body>
+    Text:
+    <input type="text" id="input_text" name="input_text" value="UNAVAILABLE">
+    Selector positions: 
+    <input type="number" id="sel_from" name="sel_from" value="0" min="-2">
+    to
+    <input type="number" id="sel_to" name="sel_to" value="0" min="-2">
+    <label for="input_align">Align:</label>
+    <select name="input_align" id="input_align">
+      <option value="left">Left</option>
+      <option value="center">Center</option>
+      <option value="right">Right</option>
+    </select>
+    <label for="input_font">Font:</label>
+    <select name="input_font" id="input_font">
+      <option value="cursive">Cursive</option>
+      <option value="arial">Arial</option>
+    </select>
+    <label for="input_style">Style:</label>
+    <select name="input_style" id="input_style">
+      <option value="normal">Normal</option>
+      <option value="italic">Italic</option>
+    </select>
+    <button id="b">Update</button>
+    <br>
+
+    <canvas id="c"></canvas>
+    <br>
+
+    <div id="div"></div>
+  </body>
+  <script>
+    const font_size = "80px";
+    const font_weight = 600;
+    const pos_x = 750;
+    const pos_y = 100;
+
+    function click() {
+        const text = document.getElementById('input_text').value;
+        const sel_from = parseInt(document.getElementById('sel_from').value);
+        const sel_to = parseInt(document.getElementById('sel_to').value);
+        text_align = document.getElementById('input_align').value;
+        font_family = document.getElementById('input_font').value;
+        font_style = document.getElementById('input_style').value;
+        runSample(text, sel_from, sel_to);
+    }
+
+    document.getElementById('b').onclick = click;
+    document.addEventListener('keydown', function(e) {
+        if(e.code == "Enter") click();
+    });
+    
+    function placeTextInDOM(text) {
+        const el = document.getElementById("div");
+        el.style.position = "absolute";
+        el.innerHTML = text;
+        el.style.fontFamily = font_family;
+        el.style.fontSize = font_size;
+        el.style.fontWeight = font_weight;
+        el.style.fontStyle = font_style;
+        el.style.opacity = 1;
+        el.style.textAlign = text_align;
+    }
+
+    function setSelectionObject(from, to) {
+      const el = document.getElementById("div");
+      let range = document.createRange();
+      let sel = window.getSelection();
+
+      range.setStart(el.childNodes[0], from);
+      range.setEnd(el.childNodes[0], to+1);
+
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      console.log("FROM DOM SELECTION:",sel.getRangeAt(0).getClientRects());
+    }
+
+    function getInitPositionViaTM(text, position, ctx) { // indexed from 0
+        //assert(0 <= position && position <= text.length);
+        if( position == text.length ){
+            const tm = ctx.measureText(text);
+            return tm.width;
+        }
+        const until_position = text.substring(0, position + 1);
+        const tm_until_position = ctx.measureText(until_position);
+        const letter = text.substring(position, position + 1);
+        const tm_letter = ctx.measureText(letter);
+        
+        return tm_until_position.width - tm_letter.width;
+    }
+
+    function getSelectionRectsViaTM(text, from, to, ctx) {
+        const from_position = getInitPositionViaTM(text, from, ctx);
+        const to_position = getInitPositionViaTM(text, to+1, ctx);
+        const tm = ctx.measureText(text);
+        const boxes = [];
+        boxes.push({
+            x: from_position,
+            y: -tm.fontBoundingBoxAscent,
+            width: to_position - from_position,
+            height: tm.fontBoundingBoxAscent + tm.fontBoundingBoxDescent
+        })
+        return boxes;
+    }
+
+    function getSelectionRectsViaAdvances(text, from, to, ctx) {
+        console.log(`advances ${from} - ${to}`);
+        const tm = ctx.measureText(text);
+        const from_position = tm.advances[from];
+        const to_position = (to+1 < text.length) ? tm.advances[to+1] : tm.width;
+        const boxes = [];
+        boxes.push({
+            x: from_position,
+            y: -tm.fontBoundingBoxAscent,
+            width: to_position - from_position,
+            height: tm.fontBoundingBoxAscent + tm.fontBoundingBoxDescent
+        })
+        return boxes;
+    }
+
+    function getSelectionRectsViaAPI(text, from, to, ctx) {
+        console.log(`API range ${from} - ${to}`);
+        const tm = ctx.measureText(text);
+        return tm.getSelectionRects(from, to);
+    }
+
+    function runSample(text, sel_from, sel_to) {
+        console.log(`START ${text} ${sel_from} ${sel_to}`)
+
+        const canvas = document.getElementById("c");
+        canvas.width = 1500;
+        canvas.height = 400;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'cyan';
+        ctx.fillRect(pos_x, 0, 1, canvas.height)
+
+        // Place text directly in DOM for selection comparison.
+        placeTextInDOM(text);
+        setSelectionObject(sel_from, sel_to);
+
+        // Solid red: Direct fillText command.
+        ctx.fillStyle = "red";
+        ctx.font = `${font_style} ${font_weight} ${font_size} ${font_family}`;
+        ctx.textBaseline = "top";
+        ctx.textAlign = text_align;
+        ctx.fillText(text, pos_x, pos_y);
+
+        // Paint selection rects from new API approach - skyblue:
+        const api_sel_rects = getSelectionRectsViaAPI(text, sel_from, sel_to, ctx);
+        ctx.fillStyle = 'skyblue';
+        ctx.globalAlpha = 0.25;
+        console.log("FROM NEW API;", api_sel_rects);
+        for(const r of api_sel_rects) {
+            ctx.fillRect(r.x+pos_x, r.y+pos_y, r.width, r.height);
+        }
+        ctx.globalAlpha = 1.0;
+
+    }
+
+    click();
+
+    </script>
+</html>

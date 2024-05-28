@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Textured Plane</title>
+    <style>
+body { 
+  margin: 0; 
+  background-color: #6a6562; 
+  overflow: hidden;
+}
+#c { 
+  display: block;
+}
+
+#els {
+  margin: 0;
+  image-rendering: pixelated;
+
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 512px;
+  height: 512px;  
+  background-color: green;
+  image-rendering: pixelated;  
+}
+
+#f {
+  contain: paint;
+  box-sizing: border-box;
+  width: 512px;
+  height: 512px;
+  font-size: 32px;
+  background: linear-gradient(45deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF);
+
+  font-family: arial;
+  overflow: auto;
+  padding: 40px;
+}
+
+button, input {
+  font-size: 32px;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+#debug {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  width: 512px;
+  height: 512px;
+/*  background-color: red;*/
+/*  opacity: 0.5;*/
+  z-index: 1000;
+/*  pointer-events: none;*/
+}
+
+    </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+<!--   <canvas id="els" width=1024 height=1024>
+    <div id=f>
+      <p>This is something new!</p>
+
+      <button>move</button>
+
+    </div>
+  </canvas>
+ -->  
+ <div id="debug">
+   <h1>HEY! this is amazing!</h1>
+   <button>gadasf</button>
+
+ </div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+</script>  
+<script type="module">
+import * as THREE from "three";
+window.THREE = THREE;
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+
+import TWEEN from "https://cdnjs.cloudflare.com/ajax/libs/tween.js/23.1.2/tween.esm.js";
+
+// SETUP
+const canvas = document.getElementById('c');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ canvas });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+});
+
+function tweenCamera(targetPosition, targetQuaternion, duration, easingFunction) {
+  const startPosition = camera.position.clone();
+  const startQuaternion = camera.quaternion.clone();
+
+  const tween = new TWEEN.Tween({ t: 0 })
+    .to({ t: 1 }, duration)
+    .easing(easingFunction ?? TWEEN.Easing.Linear.None)
+    .onUpdate(function (obj) {
+      camera.position.lerpVectors(startPosition, targetPosition, obj.t);
+      camera.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, obj.t);
+    })
+    .start();
+}
+
+function lookAtPlane(plane, distance) {
+  const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(plane.quaternion).normalize();
+  const targetPosition = plane.position.clone().add(direction.multiplyScalar(distance));
+  
+  const lookAtMatrix = new THREE.Matrix4().lookAt(targetPosition, plane.position, new THREE.Vector3(0, 1, 0));
+  const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(lookAtMatrix);
+
+  return { targetPosition, targetQuaternion };
+}
+
+function rotatePlane(plane, euler, duration, easingFunction) {
+  const startQuaternion = plane.quaternion.clone();
+  const targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(euler[0], euler[1], euler[2]));
+
+  const tween = new TWEEN.Tween({ t: 0 })
+    .to({ t: 1 }, duration)
+    .easing(easingFunction ?? TWEEN.Easing.Linear.None)
+    .onUpdate(function (obj) {
+      plane.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, obj.t);
+    })
+    .start();  
+}
+
+function convertToDOMMatrix(threeMatrix) {
+  const elements = threeMatrix.elements;
+  return new DOMMatrix([
+    elements[0], elements[1], elements[2], elements[3],
+    elements[4], elements[5], elements[6], elements[7],
+    elements[8], elements[9], elements[10], elements[11],
+    elements[12], elements[13], elements[14], elements[15]
+  ]);
+}
+
+function ToCSSTransform(threeMatrix) {
+  return convertToDOMMatrix(threeMatrix).toString();
+}
+
+function getCanvasTransformMatrix(fromCanvas, toCanvas) {
+  const fromRect = fromCanvas.getBoundingClientRect();
+  const toRect = toCanvas.getBoundingClientRect();
+
+  const scaleX = toRect.width / fromRect.width;
+  const scaleY = toRect.height / fromRect.height;
+
+  const translateX = toRect.left - fromRect.left * scaleX;
+  const translateY = toRect.top - fromRect.top * scaleY;
+
+  const transformMatrix = new THREE.Matrix4();
+  transformMatrix.makeTranslation(translateX, translateY, 0);
+  transformMatrix.scale(new THREE.Vector3(scaleX, scaleY, 1));
+  return transformMatrix;
+}
+
+
+// const els = document.getElementById("els");
+// const ctx = els.getContext("2d");
+// const f = document.getElementById("f");
+
+// ctx.scale(2, 2);
+// ctx.placeElement(f, 0, 0);
+
+// const canvasTexture = new THREE.CanvasTexture(els);
+
+// SCENE
+const geometry = new THREE.PlaneGeometry(1, 1);
+const texture = new THREE.TextureLoader().load(
+    'https://threejsfundamentals.org/threejs/resources/images/wall.jpg');
+const canvasTexture = texture;
+const canvasMaterial = new THREE.MeshBasicMaterial({map: canvasTexture});
+
+const material = new THREE.MeshBasicMaterial({ map: texture });
+
+const plane1 = new THREE.Mesh(geometry, canvasMaterial);
+window.plane = plane1;
+scene.add(plane1);
+
+const plane2 = new THREE.Mesh(geometry, material);
+plane2.position.x = 2;
+plane2.rotation.y = -Math.PI/4;
+scene.add(plane2);
+
+const plane3 = new THREE.Mesh(geometry, material);
+plane3.position.x = -2;
+plane3.position.z = 1;
+plane3.rotation.y = Math.PI/2;
+scene.add(plane3);
+
+camera.position.z = 1;
+
+window.x = function(a, {dist = 2, time = 1.5, euler = null}) {
+  const t = lookAtPlane([plane1, plane2, plane3][a], dist);
+  if (euler) {
+    t.targetQuaternion.multiply(new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(euler[0], euler[1], euler[2])));
+  }
+  tweenCamera(t.targetPosition, t.targetQuaternion, time * 1000, TWEEN.Easing.Cubic.InOut);
+}
+window.y = function(a, euler, time = 1.5) {
+  rotatePlane([plane1, plane2, plane3][a], euler, time * 1000, TWEEN.Easing.Quadratic.InOut);
+}
+
+window.zang = function(x, y, z) {
+  const quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));
+  tweenCamera(camera.position, quat, 1500);
+}
+
+window.zpos = function(x, y, z) {
+  const pos = new THREE.Vector3(x, y, z);
+  tweenCamera(pos, camera.quaternion, 1500);
+}
+
+
+// Animation loop
+function frame() {
+  TWEEN.update();
+
+  // canvasTexture.needsUpdate = true;
+  renderer.render(scene, camera);
+
+  const fov = 0.5 / Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * window.innerHeight;
+
+  // function getPlaneToScreenMatrix(plane) {
+  //   const modelMatrix = plane.matrixWorld;
+  //   const viewMatrix = camera.matrixWorldInverse;
+  //   const projectionMatrix = camera.projectionMatrix;
+
+  //   const pvm = new THREE.Matrix4().multiply(projectionMatrix).multiply(viewMatrix);
+  //   pvm.multiply(modelMatrix);
+  //   pvm.multiply(new THREE.Matrix4().makeScale(0.5, 0.5, 1));
+
+  //   return pvm;
+  // }
+
+  function INV(m) {
+    const x = new THREE.Matrix4().copy(m);
+    x.invert();
+    return x;
+  }
+
+  window.camera = camera;
+
+
+  const debug = document.getElementById("debug");
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  const m = new THREE.Matrix4();
+
+  m.multiply(new THREE.Matrix4().makeTranslation(-256, -256, 0));
+  m.premultiply(new THREE.Matrix4().makeScale(1 / 512, 1 / 512, 1));
+
+  m.premultiply(plane1.matrixWorld);
+  m.premultiply(camera.matrixWorldInverse);
+  m.premultiply(camera.projectionMatrix);
+
+  m.premultiply(new THREE.Matrix4().makeScale(W/2, H/2, 1));
+  m.premultiply(new THREE.Matrix4().makeTranslation(W/2, H/2, 0));
+  window.m = m;
+
+  window.applym = (x, y, z = 0) => {
+    const v = new THREE.Vector3(x, y, z);
+    v.applyMatrix4(m);
+    return v;
+  }
+
+  debug.style.transformOrigin = '0 0';  
+  debug.style.transform = ToCSSTransform(m);
+
+  // ctx.updateElementTransform(f, dm);
+
+
+  requestAnimationFrame(frame);
+}
+
+frame();
+// plane1.position.x = 1;
+// x(0, {dist: 2, euler: [0, 0, 0]});
+// zpos(1,0,4);
+x(0, {dist: 1, euler: [0, 0.2, 0]})
+
+</script>
+</body>
+</html>

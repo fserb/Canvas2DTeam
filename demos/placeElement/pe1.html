@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<style>
+body {
+	background-color: #6a6562;
+	overflow: none;
+}
+
+#c {
+	background-color: #EEE;
+	width: 800px;
+	height: 600px;
+	image-rendering: pixelated;
+}
+
+#f {
+	border: 5px solid red;
+  contain: paint;
+	width: 400px;
+	height: 200px;
+	font-size: 42px;
+	background-color: cyan;
+	font-family: arial;
+	overflow: auto;
+}
+
+button {
+	margin: 0 10px;
+	height: 30px;
+}
+
+</style>
+</head>
+<body>
+
+<canvas width=800 height=600 id=c>
+	<div id=f>
+		<div id=x>this is a <b>canvas</b> dsf asd iasdj iasdj iasjd iasj!</div>
+		<button id=b>click</button>
+	</div>
+
+</canvas>
+
+<script>
+
+document.getElementById("b").addEventListener("click", ev => {
+	document.getElementById("x").innerHTML = "hey!";
+});
+
+const S = 2;
+const canvas = document.getElementById("c");
+canvas.width *= S;
+canvas.height *= S;
+const ctx = canvas.getContext("2d");
+
+const f = document.getElementById("f");
+
+canvas.addEventListener("wheel", ev => ev.preventDefault(), { passive:false });
+f.addEventListener("wheel", ev =>  ev.currentTarget.scrollBy(ev.deltaX, ev.deltaY));
+
+ctx.scale(S, S);
+ctx.placeElement(f, 200, 50);
+
+
+// const frame = () => {
+// 	const t = performance.now();
+
+// 	ctx.reset();
+// 	ctx.scale(S, S);
+// 	ctx.placeElement(f, 200 + 100*Math.sin(t / 500), 100);
+
+// 	requestAnimationFrame(frame);
+// } 
+// frame();
+
+// const canvas2 = document.getElementById("c2");
+// const ctx2 = canvas2.getContext("2d");
+// const frame = () => {
+// 	ctx2.reset();
+// ctx2.drawImage(canvas, 0, 0);
+// 	// requestAnimationFrame(frame);
+// };
+// // setTimeout(frame, 0);
+// requestAnimationFrame(frame);
+// // frame();
+
+
+</script>
+</body>
+</html>
