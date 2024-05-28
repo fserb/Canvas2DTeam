@@ -1,0 +1,84 @@
+#!/bin/bash
+
+SHELL=0
+PROFILE="1"
+VM=""
+TARGET_DIR="Release"
+
+for i in "$@"; do
+  case $i in
+    --shell)
+      SHELL=1
+      shift
+      ;;
+    --profile=*)
+      PROFILE="${i#*=}"
+      shift
+      ;;
+    --vmodules=*)
+      VM="${i#*=}"
+      shift
+      ;;
+    -t=*|--target=*)
+      TARGET_DIR="${i#*=}"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*|--*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
+
+cd $HOME/chrome/src
+
+VMODULES_STRING="$VM"
+
+COMMON_ANCESTOR=$(git merge-base HEAD origin/main)
+function auto_vmodules() {
+  for l in `git diff --no-renames --name-only $COMMON_ANCESTOR | egrep "\.(cc|h)$"`; do
+    echo `basename ${l%.*}`
+  done | sort -u
+}
+for i in `auto_vmodules`; do
+  VMODULES_STRING="${VMODULES_STRING}$i=3,"
+done
+
+EXTRA_FLAGS="--user-data-dir=../profiles/${PROFILE}/" 
+
+if [[ $OSTYPE == 'darwin'* ]]; then
+  BINARY=Chromium.app/Contents/MacOS/Chromium
+
+  if [[ ${SHELL} == 1 ]]; then
+    BINARY="Content Shell.app/Contents/MacOS/Content Shell"
+    EXTRA_FLAGS=""
+  fi
+else
+  BINARY=chrome
+  if [[ ${SHELL} == 1 ]]; then
+    BINARY="content_shell"
+    EXTRA_FLAGS=""
+  fi
+fi
+
+function ene() {
+  echo "$@";
+  exec "$@";
+}
+
+#   --disable-features=CanvasOopRasterization \
+
+ene "out/${TARGET_DIR}/${BINARY}" \
+  $EXTRA_FLAGS \
+  --enable-logging=stderr \
+  --enable-experimental-web-platform-features \
+  --force-device-scale-factor=1.0 \
+  --vmodule="${VMODULES_STRING}" \
+  $@
+
