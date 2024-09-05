@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<canvas id = "canvas" width="1000" height="600" style="border:1px solid black;"></canvas>
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext('2d');
+
+    function getRad(p, offset){
+        return 2 * Math.PI * p + offset;
+    }
+
+    function percentageToColor(p, offset) {
+        let blue = Math.round(255 * Math.abs(Math.sin(getRad(p, offset))));
+        let green = 255 - blue;
+        return `rgb(0, ${green}, ${blue})`;
+    }
+    
+    ctx.font = '50px sans-serif';
+    let text = 'Happy Birthday تولدت مبارک';
+    let tm = ctx.measureText(text);
+    const clusters = tm.getTextClustersForRange(0, text.length);
+
+    const origin_x = 100;
+    const origin_y = 200;
+    ctx.translate(origin_x, origin_y);
+    function drawScaled(cluster, p, offset) {
+        ctx.fillStyle = percentageToColor(p, offset / 2);
+        ctx.save();
+        const factor = 2 + Math.sin(getRad(p, offset));
+        ctx.scale(1, factor);
+        ctx.fillTextCluster(cluster, 0, -cluster.y);
+        ctx.restore();
+    }
+
+    let t = 0;
+    const frames_per_loop = 600;
+    const delta = 2 * Math.PI / frames_per_loop;
+    const max_height = 50;
+    function draw(){
+        ctx.clearRect(-origin_x, -origin_y, canvas.width, canvas.height);
+        for(const cluster of clusters){
+            let p = cluster.x / tm.width;
+            drawScaled(cluster, p, t);
+        }
+        t += delta;
+        requestAnimationFrame(draw);
+    }
+    draw();    
+</script>

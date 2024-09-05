@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<canvas id = "canvas" width="800" height="400" style="border:1px solid black;"></canvas>
+<script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext('2d');
+    
+    ctx.font = '50px cursive';
+    let text = "Up And Down We Go 🧑‍🧑‍🧒‍🧒 finally";
+    let tm = ctx.measureText(text);
+    const clusters = tm.getTextClustersForRange(0, text.length);
+
+    function percentageToDelta(p, offset, max) {
+        let rad = 2 * Math.PI * p + offset;
+        let y = Math.sin(rad) * max;
+        return y;
+    }
+
+    let t = 0;
+    const frames_per_loop = 300;
+    const delta = 2 * Math.PI / frames_per_loop;
+    const max_height = 50;
+    function draw(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const cluster of clusters) {
+            const y = percentageToDelta(cluster.x / tm.width, t, max_height);
+            if (y < -max_height * 0.5) ctx.fillStyle = 'cyan';
+            else ctx.fillStyle = 'magenta'
+            ctx.fillTextCluster(cluster, 50, 200 + y);
+        }
+        t += delta;
+        requestAnimationFrame(draw);
+    }
+    draw();    
+</script>
