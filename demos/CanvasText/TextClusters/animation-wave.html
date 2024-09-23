@@ -7,7 +7,7 @@
     ctx.font = '50px cursive';
     let text = "Up And Down We Go 🧑‍🧑‍🧒‍🧒 finally";
     let tm = ctx.measureText(text);
-    const clusters = tm.getTextClustersForRange(0, text.length);
+    const clusters = tm.getTextClusters();
 
     function percentageToDelta(p, offset, max) {
         let rad = 2 * Math.PI * p + offset;

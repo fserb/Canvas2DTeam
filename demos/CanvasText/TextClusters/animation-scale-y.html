@@ -17,7 +17,7 @@
     ctx.font = '50px sans-serif';
     let text = 'Happy Birthday تولدت مبارک';
     let tm = ctx.measureText(text);
-    const clusters = tm.getTextClustersForRange(0, text.length);
+    const clusters = tm.getTextClusters();
 
     const origin_x = 100;
     const origin_y = 200;

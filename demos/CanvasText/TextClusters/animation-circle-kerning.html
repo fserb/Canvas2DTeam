@@ -22,8 +22,7 @@
     let text = "We are Testing with kerning    🐈‍⬛ 🐞    Ligatures like fi and fl work too    🇨🇴 🚴‍♂️    ";
 
     let tm = ctx.measureText(text);
-    const clusters = tm.getTextClustersForRange(0, text.length,
-    {align: 'center', baseline: 'middle'});
+    const clusters = tm.getTextClusters({align: 'center', baseline: 'middle'});
     
     let t = 0;
     const frames_per_loop = 1200;

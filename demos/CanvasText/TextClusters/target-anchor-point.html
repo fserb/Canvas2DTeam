@@ -25,10 +25,8 @@
     const target_align = 'center';
     const target_baseline = 'middle';
 
-    let clusters = tm.getTextClustersForRange(0, text.length, {align: target_align, baseline: target_baseline});
+    let clusters = tm.getTextClusters({align: target_align, baseline: target_baseline});
 
-    ctx.textAlign = target_align;
-    ctx.textBaseline = target_baseline;
     for(let cluster of clusters) {
         ctx.fillStyle = 'rgba(255, 0, 255, 0.5)';
         ctx.fillRect(cluster.x + x, y-100, 1, 2*dy);
