@@ -14,15 +14,21 @@ body {
 	image-rendering: pixelated;
 }
 
-#f {
+#c > * {
 	border: 5px solid red;
   contain: paint;
 	width: 400px;
-	height: 200px;
+	height: 400px;
 	font-size: 42px;
 	background-color: cyan;
 	font-family: arial;
 	overflow: auto;
+/*	position: absolute;*/
+}
+
+#x {
+	box-sizing: border-box;
+	text-wrap: balance;
 }
 
 button {
@@ -35,11 +41,36 @@ button {
 <body>
 
 <canvas width=800 height=600 id=c>
-	<div id=f>
-		<div id=x>this is a <b>canvas</b> dsf asd iasdj iasdj iasjd iasj!</div>
-		<button id=b>click</button>
-	</div>
+		<div id=x>
+			this is a <b>canvas</b> dsf!
+			<div id=f>
+				<button id=b>click</button>
+ 				<input type=text value=a><Br>
+				<input type=text value=b><Br>
+				<input type=text value=c><Br>	
+			</div>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
+			sdf<br>
 
+</div>
 </canvas>
 
 <script>
@@ -57,11 +88,25 @@ const ctx = canvas.getContext("2d");
 const f = document.getElementById("f");
 
 canvas.addEventListener("wheel", ev => ev.preventDefault(), { passive:false });
-f.addEventListener("wheel", ev =>  ev.currentTarget.scrollBy(ev.deltaX, ev.deltaY));
+document.getElementById("x").addEventListener("wheel", ev =>  ev.currentTarget.scrollBy(ev.deltaX, ev.deltaY));
 
-ctx.scale(S, S);
-ctx.placeElement(f, 200, 50);
+const x  = document.getElementById("x");
+//ctx.scale(S, S);
+//ctx.placeElement(x, 50,100);
+ctx.fillStyle = 'rgba(255,0,0,0.5)';
+ctx.fillRect(50, 50, 100, 100);
 
+setTimeout(() => {
+	ctx.fillRect(100, 100, 100, 100);
+//ctx.placeElement(x, 100, 100);
+}, 1000);
+
+// let tm = new DOMMatrix();
+// tm = tm.translate(0, 0);
+
+// console.log(tm);
+
+// ctx.updateElementTransform(x, tm);
 
 // const frame = () => {
 // 	const t = performance.now();

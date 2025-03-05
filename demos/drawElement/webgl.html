@@ -1,0 +1,185 @@
+<!doctype html>
+<meta charset="utf-8">
+<script src="https://livejs.com/live.js"></script>
+<html>
+  <head>
+    <style>
+* {
+  margin: 10;
+}
+body {
+  background-color: #999;
+}
+#canvas {
+  background-color: #fff;
+  border: 1px solid magenta;
+  margin: 10px;
+  user-select: text;
+}
+
+#placeElement {
+  will-change: transform;
+  width: 200px;
+  height: 200px;
+  background-color: black;
+  color: color(srgb 0 1 1);
+  font: 30px monospace;
+  font-weight: bolder;
+  border: 10px dashed magenta;
+  transition: width 10s, height 10s;
+}
+input {
+  font: 20px monospace;
+  width: 200px;
+}
+
+/* #placeElement:hover {
+  width: 600px;
+  height: 600px;
+} */
+
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas">
+      <div id="placeElement">Very Normal HTML &lt;DIV&gt;
+        <input type="text">
+        😘😘😘😘
+      </div>
+    </canvas>
+  </body>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      canvas.width = 600;
+      canvas.height = 300;
+      const gl = canvas.getContext("webgl2");
+      const placeElement = document.getElementById("placeElement");
+      window.p = placeElement;
+
+      const shadercode = `
+precision mediump float;
+
+uniform vec3 iResolution;
+uniform float iTime;
+uniform sampler2D iChannel0;
+uniform vec2 elementSize;
+uniform float noiseScale;
+
+vec2 random2(vec2 st){
+    st = vec2( dot(st,vec2(0.040,-0.250)),
+              dot(st,vec2(269.5,183.3)) );
+    return -1.0 + 2.0*fract(sin(st)*43758.633);
+}
+
+// Value Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/lsf3WH
+float valuenoise(vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    vec2 u = smoothstep(0.0, 1.0, f);
+
+    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy/elementSize.xy;
+  uv.y -= 0.5 * elementSize.y/iResolution.y;
+  if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) {
+    return;
+  }
+
+  // float noiseScale = 0.1;
+
+  vec2 uvr = vec2(
+        valuenoise(uv + iTime),
+        valuenoise(uv + iTime + 200.0)) * noiseScale;
+  vec2 uvg = vec2(
+        valuenoise(uv + iTime + 2324.0),
+        valuenoise(uv + iTime + 203.0)) * noiseScale;
+  vec2 uvb = vec2(
+        valuenoise(uv + iTime + 45645.5465),
+        valuenoise(uv + iTime - 200.0)) * noiseScale;
+  vec2 uva = vec2(
+        valuenoise(uv + iTime + 454.5465),
+        valuenoise(uv + iTime - 454.0)) * noiseScale;
+
+  float red = texture2D(iChannel0, uv + uvr).r;
+  float green = texture2D(iChannel0, uv + uvg).g;
+  float blue = texture2D(iChannel0, uv + uvb).b;
+  float alpha = texture2D(iChannel0, uv + uva).a;
+
+
+  gl_FragColor = vec4(red, green, blue, alpha);
+  // gl_FragColor = vec4(texture2D(iChannel0, uv));
+}
+      `;
+
+      const glProgram = gl.createProgram();
+      const vs = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(
+        vs,
+        "attribute vec2 pos;void main(){gl_Position=vec4(pos,0,1);}",
+      );
+      gl.compileShader(vs);
+      gl.attachShader(glProgram, vs);
+
+      const fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fs, shadercode);
+      gl.compileShader(fs);
+      if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(fs));
+      }
+
+      gl.attachShader(glProgram, fs);
+      gl.linkProgram(glProgram);
+      if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+        console.error(gl.getProgramInfoLog(glProgram));
+      }
+
+      gl.useProgram(glProgram);
+
+      const bf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, bf);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Int8Array([-3, 1, 1, -3, 1, 1]),
+        gl.STATIC_DRAW,
+      );
+
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.BYTE, 0, 0, 0);
+
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+      gl.uniform3f(
+        gl.getUniformLocation(glProgram, "iResolution"),
+        canvas.width,
+        canvas.height,
+        0,
+      );
+      function frame(time) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(placeElement);
+        gl.uniform1f(gl.getUniformLocation(glProgram, "noiseScale"), 0.1);
+        gl.uniform1i(gl.getUniformLocation(glProgram, "iChannel0"), 0);
+        gl.uniform1f(gl.getUniformLocation(glProgram, "iTime"), performance.now() / 1000);
+        const r = placeElement.getBoundingClientRect();
+        gl.uniform2f(gl.getUniformLocation(glProgram, "elementSize"),
+          r.width, r.height);
+        gl.drawArrays(6, 0, 3);
+        requestAnimationFrame(frame);
+      }
+      frame();
+    </script>
+</html>
