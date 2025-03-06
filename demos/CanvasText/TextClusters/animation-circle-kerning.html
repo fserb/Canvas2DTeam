@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta charset="utf-8">
 <canvas id = "canvas" width="1000" height="1000" style="border:1px solid black;"></canvas>
 <script>
     function getRad(p, offset){
@@ -27,11 +28,11 @@
     let t = 0;
     const frames_per_loop = 1200;
     const delta = 2 * Math.PI / frames_per_loop;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.translate(center_x , center_y);
-    function draw(){
-        ctx.clearRect(-center_x, -center_y, canvas.width, canvas.height);
+   function draw(){
+        ctx.reset();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.translate(center_x , center_y);
         for (const cluster of clusters) {
             ctx.save();
             let p = cluster.x / tm.width;
