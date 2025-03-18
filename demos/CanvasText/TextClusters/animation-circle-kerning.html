@@ -41,7 +41,7 @@
             ctx.fillStyle = percentageToColor(p, -t*2);
             ctx.translate(-x, -y);
             ctx.rotate(rad + 3 * Math.PI / 2);
-            ctx.fillTextCluster(cluster, -cluster.x, -cluster.y);
+            ctx.fillTextCluster(cluster, 0, 0, {x: 0, y: 0});
             ctx.translate(x, y);
             ctx.restore();
         }

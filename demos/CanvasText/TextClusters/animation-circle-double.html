@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<canvas id = "canvas" width="1000" height="1000" style="border:1px solid black;"></canvas>
+<script>
+    function getRad(p, offset){
+        return 2 * Math.PI * p + offset;
+    }
+
+    function percentageToColor(p, offset) {
+        let blue = Math.round(255 * Math.abs(Math.sin(getRad(p, offset))));
+        let red = 255 - blue;
+        return `rgb(${red}, 50, ${blue})`;
+    }
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext('2d');
+
+    const center_x = 500;
+    const center_y = 500;
+    const radius_1 = 200;
+    const radius_2 = 300;
+    ctx.font = '50px serif';
+    ctx.textAlign = 'left';
+    let text_1 = "And the tennis court was covered up   🎾   With some tent-like thing    ⛺️   ";
+    let text_2 = "I want auroras and sad prose   ✨ 🖋️   I want to watch wisteria grow right over my bare feet   🍂 🌲   ";
+
+    let tm_1 = ctx.measureText(text_1);
+    const clusters_1 = tm_1.getTextClusters({align: 'center', baseline: 'middle'});
+    let tm_2 = ctx.measureText(text_2);
+    const clusters_2 = tm_2.getTextClusters({align: 'center', baseline: 'middle'});
+    
+    let t = 0;
+    const frames_per_loop = 1200;
+    const delta = 2 * Math.PI / frames_per_loop;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(center_x , center_y);
+    function draw(){
+        ctx.clearRect(-center_x, -center_y, canvas.width, canvas.height);
+
+        // Inner circle.
+        for (const cluster of clusters_1) {
+            ctx.save();
+            let p = cluster.x / tm_1.width;
+            let rad = getRad(p, -t);
+            let x = radius_1 * Math.cos(rad);
+            let y = radius_1 * Math.sin(rad);
+            ctx.fillStyle = percentageToColor(p, -t*2);
+            ctx.translate(-x, -y);
+            ctx.rotate(rad + 3 * Math.PI / 2);
+            ctx.fillTextCluster(cluster, 0, 0, {x: 0, y: 0});
+            ctx.translate(x, y);
+            ctx.restore();
+        }
+
+        // Outer circle.
+        for (const cluster of clusters_2) {
+            ctx.save();
+            let p = cluster.x / tm_2.width;
+            let rad = getRad(p, t);
+            let x = radius_2 * Math.cos(rad);
+            let y = radius_2 * Math.sin(rad);
+            ctx.strokeStyle = percentageToColor(p, -t*2);
+            ctx.translate(-x, -y);
+            ctx.rotate(rad + 3 * Math.PI / 2);
+            ctx.strokeTextCluster(cluster, 0, 0, {x: 0, y: 0});
+            ctx.translate(x, y);
+            ctx.restore();
+        }
+        t += delta;
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+    
+</script>

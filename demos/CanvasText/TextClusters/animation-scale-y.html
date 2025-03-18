@@ -27,7 +27,7 @@
         ctx.save();
         const factor = 2 + Math.sin(getRad(p, offset));
         ctx.scale(1, factor);
-        ctx.fillTextCluster(cluster, 0, -cluster.y);
+        ctx.fillTextCluster(cluster, 0, 0, {y: 0});
         ctx.restore();
     }
 
