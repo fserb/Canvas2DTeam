@@ -59,7 +59,7 @@ input {
           <br><br>
           <br><br>
           <br><br>
-      </div>
+      </div>http://localhost:8082/access/
 
     </canvas>
 
@@ -68,6 +68,10 @@ input {
     <script >
       const canvas = document.getElementById("c");
       const gl = canvas.getContext("webgl2");
+
+
+canvas.addEventListener("wheel", ev => ev.preventDefault(), { passive:false });
+document.getElementById("drawnElement").addEventListener("wheel", ev =>  ev.currentTarget.scrollBy(ev.deltaX, ev.deltaY));
 
       const drawnElement = document.getElementById("drawnElement");
 
