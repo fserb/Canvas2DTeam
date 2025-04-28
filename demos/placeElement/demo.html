@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<style>
+
+body {
+  background-color: #6a6562;
+  overflow: none;
+}
+
+#c {
+  background-color: #EEE;
+  width: 250px;
+  height: 250px;
+}
+
+#x {
+  contain: paint;
+  width: 256px;
+  font-family: arial;
+}
+
+</style>
+</head>
+<body>
+
+<canvas id=c width=500 height=500>
+  <div id=x>this is a <b>canvas</b>!</div>
+</canvas>
+<script>
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const x = document.getElementById("x");
+  ctx.scale(2, 2);
+  ctx.placeElement(x, 50, 50);
+</script>
+</body>
+</html>

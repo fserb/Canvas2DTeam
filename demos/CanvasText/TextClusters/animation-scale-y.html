@@ -14,7 +14,7 @@
         let green = 255 - blue;
         return `rgb(0, ${green}, ${blue})`;
     }
-    
+
     ctx.font = '50px sans-serif';
     let text = 'Happy Birthday تولدت مبارک';
     let tm = ctx.measureText(text);
@@ -45,5 +45,5 @@
         t += delta;
         requestAnimationFrame(draw);
     }
-    draw();    
+    draw();
 </script>

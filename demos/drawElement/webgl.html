@@ -17,7 +17,7 @@ body {
   user-select: text;
 }
 
-#placeElement {
+#el {
   will-change: transform;
   width: 200px;
   height: 200px;
@@ -33,16 +33,11 @@ input {
   width: 200px;
 }
 
-/* #placeElement:hover {
-  width: 600px;
-  height: 600px;
-} */
-
     </style>
   </head>
   <body>
     <canvas id="canvas">
-      <div id="placeElement">Very Normal HTML &lt;DIV&gt;
+      <div id="el">Very Normal HTML &lt;DIV&gt;
         <input type="text">
         😘😘😘😘
       </div>
@@ -54,8 +49,8 @@ input {
       canvas.width = 600;
       canvas.height = 300;
       const gl = canvas.getContext("webgl2");
-      const placeElement = document.getElementById("placeElement");
-      window.p = placeElement;
+      const el = document.getElementById("el");
+      window.p = el;
 
       const shadercode = `
 precision mediump float;
@@ -170,11 +165,11 @@ void main() {
       );
       function frame(time) {
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(placeElement);
+        gl.texImage2D(el);
         gl.uniform1f(gl.getUniformLocation(glProgram, "noiseScale"), 0.1);
         gl.uniform1i(gl.getUniformLocation(glProgram, "iChannel0"), 0);
         gl.uniform1f(gl.getUniformLocation(glProgram, "iTime"), performance.now() / 1000);
-        const r = placeElement.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
         gl.uniform2f(gl.getUniformLocation(glProgram, "elementSize"),
           r.width, r.height);
         gl.drawArrays(6, 0, 3);

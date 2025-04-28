@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Textured Plane</title>
+    <style>
+@import url("button.css");
+
+body { 
+  margin: 0; 
+  background-color: #6a6562; 
+  overflow: hidden;
+  font-family: verdana;
+  font-size: 24px;  
+}
+
+#c { 
+  display: block;
+  pointer-events: none;
+}
+
+button, input {
+  font-size: 32px;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.other {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  display: block;
+  position: absolute;
+}
+
+.other > * {
+  contain: paint;
+  display: block;
+  isolation: isolate;
+  border: 0.1px solid rgba(0, 0, 0, 0);
+  overflow: auto;
+  box-sizing: border-box;
+  width: 512px;
+  height: 512px;
+}
+
+#f1 {
+  background-color: #FFF;
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+}
+
+#c1 {
+  z-index: 10;
+}
+
+#c2 {
+  z-index: 9;
+}
+
+#f2 {
+  border-radius: 20px;
+  background: linear-gradient(45deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF);
+  overflow: auto;
+  padding: 20px;
+  width: 512px;
+  height: 512px;
+}
+
+    </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <canvas class="other" id="c1">
+    <div id="f1">
+      <h1>Welcome to placeElement!</h1>
+      <br><br><br>
+      <button id=b1 class="button-30">proceed</button>
+    </div>
+  </canvas>
+  <canvas class="other" id="c2">
+    <div id="f2">
+<p>This is a full HTML rendered in a WebGL texture.</p>
+
+<p>We can <a href="javascript:x(1, {dist: 0.9, euler:[0, -0.4, 0], time: 1})">move things</a>. 
+  <a href="javascript:x(1, {dist: 0.9, euler:[0, 0.4, 0], time: 1})">Anywhere</a>.
+  <p>And have a<br>lot<br>of<br>text</p>
+
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <p><p>(keep scrolling)
+  <p><p><p><p><p><p><p><p><p><p><p><p>
+  <p>asdfasd
+
+    </div>
+  </canvas>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+</script>  
+<script type="module">
+import * as THREE from "three";
+window.THREE = THREE;
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+
+import TWEEN from "https://cdnjs.cloudflare.com/ajax/libs/tween.js/23.1.2/tween.esm.js";
+
+// SETUP
+const canvas = document.getElementById('c');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ canvas });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+});
+
+function tweenCamera(targetPosition, targetQuaternion, duration, easingFunction) {
+  const startPosition = camera.position.clone();
+  const startQuaternion = camera.quaternion.clone();
+
+  const tween = new TWEEN.Tween({ t: 0 })
+    .to({ t: 1 }, duration)
+    .easing(easingFunction ?? TWEEN.Easing.Linear.None)
+    .onUpdate(function (obj) {
+      camera.position.lerpVectors(startPosition, targetPosition, obj.t);
+      camera.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, obj.t);
+    })
+    .start();
+}
+
+function lookAtPlane(plane, distance) {
+  const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(plane.quaternion).normalize();
+  const targetPosition = plane.position.clone().add(direction.multiplyScalar(distance));
+  
+  const lookAtMatrix = new THREE.Matrix4().lookAt(targetPosition, plane.position, new THREE.Vector3(0, 1, 0));
+  const targetQuaternion = new THREE.Quaternion().setFromRotationMatrix(lookAtMatrix);
+
+  return { targetPosition, targetQuaternion };
+}
+
+function rotatePlane(plane, euler, duration, easingFunction) {
+  const startQuaternion = plane.quaternion.clone();
+  const targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(euler[0], euler[1], euler[2]));
+
+  const tween = new TWEEN.Tween({ t: 0 })
+    .to({ t: 1 }, duration)
+    .easing(easingFunction ?? TWEEN.Easing.Linear.None)
+    .onUpdate(function (obj) {
+      plane.quaternion.slerpQuaternions(startQuaternion, targetQuaternion, obj.t);
+    })
+    .start();  
+}
+
+function convertToDOMMatrix(threeMatrix) {
+  const elements = threeMatrix.elements;
+  return new DOMMatrix([
+    elements[0], elements[1], elements[2], elements[3],
+    elements[4], elements[5], elements[6], elements[7],
+    elements[8], elements[9], elements[10], elements[11],
+    elements[12], elements[13], elements[14], elements[15]
+  ]);
+}
+
+function ToCSSTransform(threeMatrix) {
+  return convertToDOMMatrix(threeMatrix).toString();
+}
+
+function getCanvasTransformMatrix(fromCanvas, toCanvas) {
+  const fromRect = fromCanvas.getBoundingClientRect();
+  const toRect = toCanvas.getBoundingClientRect();
+
+  const scaleX = toRect.width / fromRect.width;
+  const scaleY = toRect.height / fromRect.height;
+
+  const translateX = toRect.left - fromRect.left * scaleX;
+  const translateY = toRect.top - fromRect.top * scaleY;
+
+  const transformMatrix = new THREE.Matrix4();
+  transformMatrix.makeTranslation(translateX, translateY, 0);
+  transformMatrix.scale(new THREE.Vector3(scaleX, scaleY, 1));
+  return transformMatrix;
+}
+
+const S = 2;
+const LIVE = [];
+function liveCanvasToPlane(c, el, plane) {
+  c.width = window.innerWidth * S;
+  c.height = window.innerHeight * S;
+  c.style.width = `${window.innerWidth}px`;
+  c.style.height = `${window.innerHeight}px`;
+
+  const r = el.getClientRects()[0];
+  c.out = new OffscreenCanvas(r.width * S, r.height * S);
+  c.out.ctx = c.out.getContext("2d");
+  c.ctx = c.getContext("2d");
+  c.ctx.save();
+  c.ctx.scale(S, S);
+  c.ctx.placeElement(el, 0, 0);
+  c.ctx.restore();
+  const tex = new THREE.CanvasTexture(c.out);
+
+  c.updateForPlane = () => {
+    c.out.ctx.reset();
+    c.out.ctx.drawImage(c, 
+      0, 0, r.width * S, r.height * S,
+      0, 0, c.out.width, c.out.height);
+    tex.needsUpdate = true;
+
+    const TW = r.width;
+    const TH = r.height;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    const m = new THREE.Matrix4();
+
+    m.multiply(new THREE.Matrix4().makeTranslation(-TW / 2, -TH / 2, 0));
+    m.premultiply(new THREE.Matrix4().makeScale(1 / TW, 1 / TH, 1));
+
+    m.premultiply(plane.matrixWorld);
+    m.premultiply(camera.matrixWorldInverse);
+    m.premultiply(camera.projectionMatrix);
+
+    m.premultiply(new THREE.Matrix4().makeScale(W/2, H/2, 1));
+    m.premultiply(new THREE.Matrix4().makeTranslation(W/2, H/2, 0));
+    window.m = m;
+
+    window.applym = (x, y, z = 0) => {
+      const v = new THREE.Vector3(x, y, z);
+      v.applyMatrix4(m);
+      return v;
+    }
+
+    c.ctx.updateElementTransform(el, convertToDOMMatrix(m));
+
+  }
+    LIVE.push(c);
+
+  plane.material = new THREE.MeshBasicMaterial({map: tex, transparent: true
+});
+}
+
+function focusOn(c) {
+  for (const cv of document.querySelectorAll("canvas")) {
+    cv.style.zIndex = (c == cv) ? 10 : 0;
+  }
+}
+
+// SCENE
+const geometry = new THREE.PlaneGeometry(1, 1);
+const texture = new THREE.TextureLoader().load(
+    'https://threejsfundamentals.org/threejs/resources/images/wall.jpg');
+
+const material = new THREE.MeshBasicMaterial({ map: texture });
+
+const plane1 = new THREE.Mesh(geometry);
+liveCanvasToPlane(c1, f1, plane1);
+scene.add(plane1);
+
+const plane2 = new THREE.Mesh(geometry);
+plane2.position.x = 2;
+plane2.position.z = 1;
+plane2.rotation.y = - Math.PI / 4;
+liveCanvasToPlane(c2, f2, plane2);
+scene.add(plane2);
+
+const plane3 = new THREE.Mesh(geometry, material);
+plane3.position.x = -2;
+plane3.position.z = 1;
+plane3.rotation.y = Math.PI/2;
+scene.add(plane3);
+
+const PLANES = [plane1, plane2, plane3];
+
+window.x = function(a, {dist = 2, time = 1.5, euler = null}) {
+  const t = lookAtPlane(PLANES[a], dist);
+  if (euler) {
+    t.targetQuaternion.multiply(new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(euler[0], euler[1], euler[2])));
+  }
+  tweenCamera(t.targetPosition, t.targetQuaternion, time * 1000, TWEEN.Easing.Cubic.InOut);
+}
+window.y = function(a, euler, time = 1.5) {
+  rotatePlane(PLANES[a], euler, time * 1000, TWEEN.Easing.Quadratic.InOut);
+}
+
+window.zang = function(x, y, z) {
+  const quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));
+  tweenCamera(camera.position, quat, 1500);
+}
+
+window.zpos = function(x, y, z) {
+  const pos = new THREE.Vector3(x, y, z);
+  tweenCamera(pos, camera.quaternion, 1500);
+}
+
+renderer.setClearColor( 0x666666, 1 );
+
+
+// Animation loop
+function frame() {
+  TWEEN.update();
+
+  for (const l of LIVE) l.updateForPlane();
+  renderer.render(scene, camera);
+
+  window.camera = camera;
+
+  requestAnimationFrame(frame);
+}
+
+frame();
+
+camera.position.z = 0.75;
+
+focusOn(c1);
+b1.addEventListener("click", () => {
+  focusOn(c2);
+  x(1, {dist: 0.75});
+});
+
+// focusOn(c2);
+// x(1, {dist: 0.75});
+
+// plane1.position.x = 1;
+// x(0, {dist: 0.65, euler: [0, 0, 0]});
+// zpos(1,0,4);
+// x(0, {dist: 2, euler: [0, 0.5, 0]})
+
+</script>
+</body>
+</html>
